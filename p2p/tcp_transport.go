@@ -11,7 +11,7 @@ type TCPPeer struct {
 	// conn is the underlying connection of the peer
 	conn net.Conn
 
-	// if conn is dial and retrieve aa connection => outbound => true
+	// if conn is dial and retrieve a connection => outbound => true
 	// if we accept and retrieve a connection => outbound => false
 	outbound bool
 }
@@ -63,6 +63,7 @@ func (t *TCPTransport) startAcceptLoop() {
 			fmt.Printf("TCP accept error: %s\n", err)
 		}
 
+		fmt.Printf("new imcoming connection %s\n", conn)
 		go t.handleConn(conn)
 	}
 }
@@ -74,16 +75,19 @@ func (t *TCPTransport) handleConn(conn net.Conn) {
 	peer := newTCPPeer(conn, true)
 	if err := t.HandShakeFunc(peer); err != nil {
 		conn.Close()
+		fmt.Printf("TCP Handshake error %s\n", err)
 		return
 	}
 
 	//read loop
-	msg := &Temp{}
+	msg := &Message{}
 	for {
 		if err := t.Decoder.Decode(conn, msg); err != nil {
 			fmt.Printf("TCP error: %v", err)
 			continue
 		}
-	}
 
+		msg.From = conn.RemoteAddr()
+		fmt.Printf("message: %+v\n", msg)
+	}
 }
